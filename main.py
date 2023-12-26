@@ -1,19 +1,30 @@
+import math
 import pygame
 import pymunk
 import pymunk.pygame_util
-from ball import Ball
-from bot import BOT
+from objects import Ball, BOT, Wall
 import constants as const
 
 pygame.init()
+
+def check_goal_top(soccer_ball:Ball, screen:pygame.Surface) -> bool:
+    return soccer_ball.shape.body.position.y < screen.get_height()//2 - const.FIELD_HEIGHT//2 and soccer_ball.shape.body.position.x > screen.get_width()//2 - const.GOAL_POST_WIDTH//2 and soccer_ball.shape.body.position.x < screen.get_width()//2 + const.GOAL_POST_WIDTH//2
+
+def check_goal_bottom(soccer_ball:Ball, screen:pygame.Surface) -> bool:
+    return soccer_ball.shape.body.position.y > screen.get_height()//2 + const.FIELD_HEIGHT//2 and soccer_ball.shape.body.position.x > screen.get_width()//2 - const.GOAL_POST_WIDTH//2 and soccer_ball.shape.body.position.x < screen.get_width()//2 + const.GOAL_POST_WIDTH//2
+
+def display_score(screen:pygame.Surface, player_one_score:int, player_two_score:int)->None:
+    font = pygame.font.Font(None, 36)
+    score_text = font.render(str(player_one_score) + " : " + str(player_two_score), True, (255, 255, 255))
+    pygame.draw.rect(screen, width=0, color=(0,0,0), rect=(screen.get_width()//2 - score_text.get_width()//2, screen.get_height()//2 - score_text.get_height()//2, score_text.get_width(), score_text.get_height()))
+    screen.blit(score_text, (screen.get_width() // 2 - score_text.get_width() // 2, screen.get_height() // 2 - score_text.get_height() // 2))
+    pygame.display.flip()
 
 def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.pygame_util.DrawOptions, FPS:int) -> None:
     # setting socres and playing flag
     playing = False
     player_one_score = 0
     player_two_score = 0
-    font = pygame.font.Font(None, 36)
-    score_text = font.render(str(player_one_score) + " : " + str(player_two_score), True, (255, 255, 255))
 
     static_body = space.static_body # define static body for friction
 
@@ -24,7 +35,7 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
     soccer_ball.shape.color = const.BALL_COLOR
     pivot = pymunk.PivotJoint(static_body, soccer_ball.shape.body, (0, 0), (0, 0))
     pivot.max_bias = 0 # disable joint correction
-    pivot.max_force = 300 # emulate linear friction 
+    pivot.max_force = 50 # emulate linear friction 
     space.add(soccer_ball.body, soccer_ball.shape, pivot)
 
     # create the bot one
@@ -37,31 +48,23 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
     pivot.max_force = 300 # emulate linear friction 
     space.add(soccer_bot.body, soccer_bot.shape, pivot)
 
-    # creating walls around the screen
-    body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    body.position = (0, 0)
-    wall_left = pymunk.Segment(body, (0, 0), (0, screen.get_height()), 5)
-    wall_left.friction = 1
-    wall_left.elasticity = 0.95
-    space.add(wall_left.body, wall_left)
-    body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    body.position = (0, 0)
-    wall_top = pymunk.Segment(body, (0, 0), (screen.get_width(), 0), 5)
-    wall_top.friction = 1
-    wall_top.elasticity = 0.95
-    space.add(wall_top.body, wall_top)
-    body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    body.position = (screen.get_width(), 0)
-    wall_right = pymunk.Segment(body, (0, 0), (0, screen.get_height()), 5)
-    wall_right.friction = 1
-    wall_right.elasticity = 0.95
-    space.add(wall_right.body, wall_right)
-    body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    body.position = (0, screen.get_height())
-    wall_bottom = pymunk.Segment(body, (0, 0), (screen.get_width(), 0), 5)
-    wall_bottom.friction = 1
-    wall_bottom.elasticity = 0.95
-    space.add(wall_bottom.body, wall_bottom)
+    # creating walls around the field
+    wall_left = Wall((0,0),(screen.get_width()//2 - const.FIELD_WIDTH//2, screen.get_height()//2 - const.FIELD_HEIGHT//2), (screen.get_width()//2 - const.FIELD_WIDTH//2 , screen.get_height()//2+ const.FIELD_HEIGHT//2), 2)
+    space.add(wall_left.body, wall_left.shape)
+    
+    wall_right = Wall((0,0), (screen.get_width()//2 + const.FIELD_WIDTH//2, screen.get_height()//2 - const.FIELD_HEIGHT//2), (screen.get_width()//2 + const.FIELD_WIDTH//2 , screen.get_height()//2+ const.FIELD_HEIGHT//2), 2)
+    space.add(wall_right.body, wall_right.shape)
+    
+    wall_bottom_left = Wall((0,0), (screen.get_width()//2 - const.FIELD_WIDTH//2 , screen.get_height()//2+ const.FIELD_HEIGHT//2), (screen.get_width()//2 - const.GOAL_POST_WIDTH//2 , screen.get_height()//2+ const.FIELD_HEIGHT//2), 2)
+    space.add(wall_bottom_left.body, wall_bottom_left.shape)
+    wall_bottom_right = Wall((0,0), (screen.get_width()//2 + const.FIELD_WIDTH//2 , screen.get_height()//2+ const.FIELD_HEIGHT//2), (screen.get_width()//2 + const.GOAL_POST_WIDTH//2 , screen.get_height()//2+ const.FIELD_HEIGHT//2), 2)
+
+    space.add(wall_bottom_right.body, wall_bottom_right.shape)
+    wall_top_left = Wall((0,0), (screen.get_width()//2 - const.FIELD_WIDTH//2 , screen.get_height()//2- const.FIELD_HEIGHT//2), (screen.get_width()//2 - const.GOAL_POST_WIDTH//2 , screen.get_height()//2- const.FIELD_HEIGHT//2), 2)
+    space.add(wall_top_left.body, wall_top_left.shape)
+    
+    wall_top_right = Wall((0,0), (screen.get_width()//2 + const.FIELD_WIDTH//2 , screen.get_height()//2 - const.FIELD_HEIGHT//2), (screen.get_width()//2 + const.GOAL_POST_WIDTH//2 , screen.get_height()//2 - const.FIELD_HEIGHT//2), 2)
+    space.add(wall_top_right.body, wall_top_right.shape)
 
     #set fps
     clock = pygame.time.Clock()
@@ -72,15 +75,30 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
-                # soccer_bot.shape.body.apply_impulse_at_local_point((0, 1000), (0, 0))
-            # if event.type == pygame.KEYUP :
-            #     soccer_bot.shape.body.velocity = (0, 0)
+            
         keys = pygame.key.get_pressed()
-        soccer_bot.move(keys)
+        # soccer_bot.move(keys)
+        if keys[pygame.K_DOWN]:
+            # Accelerate forward
+            soccer_bot.move_direction(const.Direction.BACKWARD)
+        elif keys[pygame.K_UP]:
+            # Accelerate backward
+            soccer_bot.move_direction(const.Direction.FORWARD)
+        else:
+            # Decelerate towards 0 speed
+            soccer_bot.move_direction(const.Direction.STOP_TOWARDS)
+
+        if keys[pygame.K_RIGHT]:
+            # Accelerate left (rotate left)
+            soccer_bot.move_direction(const.Direction.RIGHT)
+        elif keys[pygame.K_LEFT]:
+            # Accelerate right (rotate right)
+            soccer_bot.move_direction(const.Direction.LEFT)
+        else:
+            # Decelerate rotation towards 0 rotation speed
+            soccer_bot.move_direction(const.Direction.STOP_ROTATION)
         
         screen.fill(const.SCREEN_BG)
-        #draw the field
-        pygame.draw.rect(screen, width=1, color=(const.FIELD_LINE_COLOR), rect=(screen.get_width()//2 - const.FIELD_WIDTH//2, screen.get_height()//2 - const.FIELD_HEIGHT//2, const.FIELD_WIDTH, const.FIELD_HEIGHT))
         #draw the goal posts
         pygame.draw.line(screen, width=3, color=(const.GOAL_LINE_COLOR), start_pos=(screen.get_width()//2 - const.GOAL_POST_WIDTH//2, screen.get_height()//2 - const.FIELD_HEIGHT//2), end_pos=(screen.get_width()//2 + const.GOAL_POST_WIDTH//2, screen.get_height()//2 - const.FIELD_HEIGHT//2))
         pygame.draw.line(screen, width=3, color=(const.GOAL_LINE_COLOR), start_pos=(screen.get_width()//2 - const.GOAL_POST_WIDTH//2, screen.get_height()//2 + const.FIELD_HEIGHT//2), end_pos=(screen.get_width()//2 + const.GOAL_POST_WIDTH//2, screen.get_height()//2 + const.FIELD_HEIGHT//2))
@@ -94,35 +112,19 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
 
         #check for score 
         #if ball crosses the goal line then add score to the player
-        if soccer_ball.shape.body.position.y < screen.get_height()//2 - const.FIELD_HEIGHT//2 and soccer_ball.shape.body.position.x > screen.get_width()//2 - const.GOAL_POST_WIDTH//2 and soccer_ball.shape.body.position.x < screen.get_width()//2 + const.GOAL_POST_WIDTH//2:
+        if check_goal_top(soccer_ball, screen):
             soccer_bot.reset()
             soccer_ball.reset()
             player_one_score += 1
-            score_text = font.render(str(player_one_score) + " : " + str(player_two_score), True, (255, 255, 255))
-            pygame.draw.rect(screen, width=0, color=(0,0,0), rect=(screen.get_width()//2 - score_text.get_width()//2, screen.get_height()//2 - score_text.get_height()//2, score_text.get_width(), score_text.get_height()))
-            screen.blit(score_text, (screen.get_width() // 2 - score_text.get_width() // 2, screen.get_height() // 2 - score_text.get_height() // 2))
-            pygame.display.flip()
+            display_score(screen, player_one_score, player_two_score)
             pygame.time.delay(1000)
-        elif soccer_ball.shape.body.position.y > screen.get_height()//2 + const.FIELD_HEIGHT//2 and soccer_ball.shape.body.position.x > screen.get_width()//2 - const.GOAL_POST_WIDTH//2 and soccer_ball.shape.body.position.x < screen.get_width()//2 + const.GOAL_POST_WIDTH//2:
+        elif check_goal_bottom(soccer_ball, screen):
             soccer_bot.reset()
             soccer_ball.reset()
             player_two_score += 1
-            score_text = font.render(str(player_one_score) + " : " + str(player_two_score), True, (255, 255, 255))
-            pygame.draw.rect(screen, width=0, color=(0,0,0), rect=(screen.get_width()//2 - score_text.get_width()//2, screen.get_height()//2 - score_text.get_height()//2, score_text.get_width(), score_text.get_height()))
-            screen.blit(score_text, (screen.get_width() // 2 - score_text.get_width() // 2, screen.get_height() // 2 - score_text.get_height() // 2))
-            pygame.display.flip()
+            display_score(screen, player_one_score, player_two_score)
             pygame.time.delay(1000)
 
-
-        # check if the ball is out of the field
-        # if soccer_ball.shape.body.position.x < screen.get_width()//2 - const.FIELD_WIDTH//2 or soccer_ball.shape.body.position.x > screen.get_width()//2 + const.FIELD_WIDTH//2 or soccer_ball.shape.body.position.y < screen.get_height()//2 - const.FIELD_HEIGHT//2 or soccer_ball.shape.body.position.y > screen.get_height()//2 + const.FIELD_HEIGHT//2:
-        #     soccer_bot.reset()
-        #     soccer_ball.reset()
-        #     score_text = font.render(str(player_one_score) + " : " + str(player_two_score), True, (255, 255, 255))
-        #     pygame.draw.rect(screen, width=0, color=(0,0,0), rect=(screen.get_width()//2 - score_text.get_width()//2, screen.get_height()//2 - score_text.get_height()//2, score_text.get_width(), score_text.get_height()))
-        #     screen.blit(score_text, (screen.get_width() // 2 - score_text.get_width() // 2, screen.get_height() // 2 - score_text.get_height() // 2))
-        #     pygame.display.flip()
-        #     pygame.time.delay(1000)
         pygame.display.flip()
 
 def main():

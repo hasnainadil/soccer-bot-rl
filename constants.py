@@ -22,4 +22,5 @@ class Direction(Enum):
     BACKWARD = 2
     LEFT = 3
     RIGHT = 4
-    STOP = 0
+    STOP_TOWARDS = 5
+    STOP_ROTATION = 6
