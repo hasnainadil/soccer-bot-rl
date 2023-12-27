@@ -2,7 +2,9 @@ import math
 import pygame
 import pymunk
 import pymunk.pygame_util
-from objects import Ball, BOT, Wall
+from bot import BOT
+from ball import Ball
+from wall import Wall
 import constants as const
 
 pygame.init()
@@ -76,6 +78,7 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
                 return
             
         keys = pygame.key.get_pressed()
+        print(keys)
         # soccer_bot.move(keys)
         if keys[pygame.K_DOWN]:
             # Accelerate forward

@@ -99,19 +99,30 @@ def sim():
                 space.reindex_shapes_for_body(soccer_bot.body)
                 print("Bot positional details:",soccer_bot.shape.body.position, soccer_bot.shape.body.angle)
                 print("Directions:",label_direction(get_direction(true_pos(soccer_ball.shape.body.position,screen_height=screen.get_height()), true_pos(soccer_bot.shape.body.position,screen_height=screen.get_height()), soccer_bot.shape.body.angle)))
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_DOWN]:
+                # Accelerate forward
+                print("down")
 
 
         screen.fill((255,255,255))
         space.debug_draw(draw_options)
         pygame.display.flip()
 
-
+import random
+import constants as const
+print(random.randint(0, 3))
 if __name__ == "__main__":
-    a = np.array([1,2,3])
-    b = np.array([4,5,6])
-    c = np.concatenate((a,b))
-    d,e = np.split(c,2)
-    print(d,e)
+    # a = np.array([1,2,3])
+    # b = np.array([4,5,6])
+    # c = np.concatenate((a,b))
+    # d,e = np.split(c,2)
+    # print(d,e)
+    t = (3,5,6)
+    print(const.Direction(0)== const.Direction.FORWARD)
+    a,b,c = t
+    print(a,b)
 
     # # print(c)
     # sim()
+
