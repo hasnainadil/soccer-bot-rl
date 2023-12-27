@@ -34,6 +34,7 @@ class Agent:
         self.env.soccer_bot_two.memory.append((state, action, reward, next_state, done))
 
     def train_long_memory_one(self):
+        # print("Training long memory")
         if len(self.env.soccer_bot_one.memory) > BATCH_SIZE:
             minibatch = random.sample(self.env.soccer_bot_one.memory, BATCH_SIZE)
         else:
@@ -62,17 +63,19 @@ class Agent:
 
     def get_action_one(self, state):
         # random moves: tradeoff exploration / exploitation
-        self.epsilon = 50 - self.n_games*0.1
+        self.epsilon = 100 - self.env.episode_count
         towards = None
         rotation = None
         self.epsilon = max(self.epsilon, 0)
         final_move = np.zeros(6)
         if random.randint(0, 200) < self.epsilon:
-            towards = random.randint(0, 2)
+            # print("random")
+            towards = np.random.choice([0, 1, 2],p=[0.4, 0.35, 0.25])
             final_move[towards] = 1
             rotation = random.randint(3, 5)
             final_move[rotation] = 1
         else:
+            # print("Predicted")
             state0 = torch.tensor(state, dtype=torch.float)
             prediction = self.env.soccer_bot_one.model(state0)
             prediction = prediction.detach().numpy()
@@ -86,13 +89,13 @@ class Agent:
 
     def get_action_two(self, state):
         # random moves: tradeoff exploration / exploitation
+        self.epsilon = 100 - self.env.episode_count
         towards = None
         rotation = None
-        self.epsilon = 50 - self.n_games*0.1
         self.epsilon = max(self.epsilon, 0)
         final_move = np.zeros(6)
         if random.randint(0, 200) < self.epsilon:
-            towards = random.randint(0, 2)
+            towards = np.random.choice([0, 1, 2],p=[0.4, 0.35, 0.25])
             final_move[towards] = 1
             rotation = random.randint(3, 5)
             final_move[rotation] = 1

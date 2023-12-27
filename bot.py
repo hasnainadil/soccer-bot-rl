@@ -66,7 +66,6 @@ class BOT():
         self.body.angular_velocity = self.rotation_speed
 
     def move_direction(self, direction:const.Direction):
-        print(direction)
         max_speed = 500
         max_rotation_speed = math.pi
 

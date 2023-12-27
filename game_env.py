@@ -80,6 +80,7 @@ class Game_env:
         self.screen = screen
         self.FPS = fps
         self.episode_count = 0
+        self.step_count = 0
         self.clock = pygame.time.Clock()
         self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
 
@@ -114,46 +115,47 @@ class Game_env:
 
     def get_reward(self, bot:BOT, opponent:BOT) -> int:
         # get side zone id
-        side_zone_id = 0
+        side_zone_id = 1
         reward_one = 0
         reward_two = 0
         if (self.soccer_ball.body.position.x < self.screen.get_width()//2 - 
         const.FIELD_WIDTH//2 + const.FIELD_HEIGHT//4) or (self.soccer_ball.body.position.x > self.screen.get_width()//2 + const.FIELD_WIDTH//2 - const.FIELD_HEIGHT//4):
-            side_zone_id = -1
+            side_zone_id = 0
 
         # get vertical zone id
         vertical_zone_id = 0
         if (self.soccer_ball.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + const.FIELD_HEIGHT//6):
-            vertical_zone_id = 3
+            vertical_zone_id = 6
         elif (self.soccer_ball.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 2*const.FIELD_HEIGHT//6):
-            vertical_zone_id = 2
+            vertical_zone_id = 5
         elif (self.soccer_ball.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 3*const.FIELD_HEIGHT//6):
-            vertical_zone_id = 1
+            vertical_zone_id = 4
         elif (self.soccer_ball.body.position.y == self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 3*const.FIELD_HEIGHT//6):
-            vertical_zone_id = 0
+            vertical_zone_id = 3
         elif (self.soccer_ball.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 4*const.FIELD_HEIGHT//6):
-            vertical_zone_id = -1
+            vertical_zone_id = 2
         elif (self.soccer_ball.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 5*const.FIELD_HEIGHT//6):
-            vertical_zone_id = -2
+            vertical_zone_id = 1
         else:
-            vertical_zone_id = -3
+            vertical_zone_id = 0
         
-        if vertical_zone_id == -3 and side_zone_id == 0:
-            reward_one += -200
-            reward_two += 200
+        if vertical_zone_id == 0 and side_zone_id == 0:
+            reward_two += 100
+        elif vertical_zone_id == 0 and side_zone_id == 6:
+            reward_one += 100
+
 
         # get distance from ball to bot
         distance_bot_one = math.sqrt((self.soccer_ball.body.position.x - bot.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - bot.shape.body.position.y)**2)
         distance_bot_two = math.sqrt((self.soccer_ball.body.position.x - opponent.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - opponent.shape.body.position.y)**2)
         # rewards are based on position on the field(vertical zone and side zone) and distance from ball to bot
-        reward_one -= distance_bot_one/10
-        reward_two -= distance_bot_two/10
+        reward_one -= distance_bot_one/2
+        reward_two -= distance_bot_two/2
         reward_one += side_zone_id * const.BASE_REWARD
         reward_two += side_zone_id * const.BASE_REWARD
         reward_one += vertical_zone_id * const.BASE_REWARD
-        reward_two += (-1)*vertical_zone_id * const.BASE_REWARD # opponent vertical zone id is negative of bot vertical zone id
-        print("Bot one reward sections: ", side_zone_id, vertical_zone_id, distance_bot_one)
-        print("Bot two reward sections: ", side_zone_id, (-1)*vertical_zone_id, distance_bot_two)
+        reward_two += (6 - vertical_zone_id) * const.BASE_REWARD # opponent vertical zone id is negative of bot vertical zone id
+
         return reward_one, reward_two
 
         
@@ -162,6 +164,7 @@ class Game_env:
         self.player_one_score = 0
 
     def play_step(self, action_one:tuple=None, action_two:tuple=None):
+        self.step_count += 1
         #logic bots movement and state change
         towards,rotation = action_one
         self.soccer_bot_one.move_direction(towards)
@@ -170,12 +173,12 @@ class Game_env:
         self.soccer_bot_two.move_direction(towards)
         self.soccer_bot_two.move_direction(rotation)
         reward_one,reward_two = self.get_reward(self.soccer_bot_one, self.soccer_bot_two)
-        print("Bot one action: ",action_one)
-        print("Bot one reward: ", reward_one)
-        print("Bot two action: ",action_two)
-        print("Bot two reward: ", reward_two)
-        print("<<------------------>>")
-        print()
+        # print("Bot one action: ",action_one)
+        # print("Bot one reward: ", reward_one)
+        # print("Bot two action: ",action_two)
+        # print("Bot two reward: ", reward_two)
+        # print("<<------------------>>")
+        # print()
         return reward_one, reward_two, False, self.player_one_score, self.player_two_score
 
     # get state of both the bots
@@ -235,6 +238,9 @@ class Game_env:
         print("Target Post Relative Position to bot two:", self.target_post_relative_pos_two)
         print("Own Goal Relative Position to bot two:", self.own_goal_relative_pos_two)
         print("Bot State two:", self.bot_two_state)
+
+    def check_bot_out(self, bot:BOT) -> bool:
+        return bot.shape.body.position.x < self.screen.get_width()//2 - const.FIELD_WIDTH//2 or bot.shape.body.position.x > self.screen.get_width()//2 + const.FIELD_WIDTH//2 or bot.shape.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 or bot.shape.body.position.y > self.screen.get_height()//2 + const.FIELD_HEIGHT//2
         
     def render(self):
         for event in pygame.event.get():
@@ -263,18 +269,42 @@ class Game_env:
         pygame.draw.line(self.screen, width=1, color=(const.FIELD_LINE_COLOR), start_pos=(self.screen.get_width()//2 - const.FIELD_WIDTH//2 , self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 4*const.FIELD_HEIGHT//6), end_pos=(self.screen.get_width()//2 + const.FIELD_WIDTH//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 4*const.FIELD_HEIGHT//6))
         pygame.draw.line(self.screen, width=1, color=(const.FIELD_LINE_COLOR), start_pos=(self.screen.get_width()//2 - const.FIELD_WIDTH//2 , self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 5*const.FIELD_HEIGHT//6), end_pos=(self.screen.get_width()//2 + const.FIELD_WIDTH//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + 5*const.FIELD_HEIGHT//6))
 
+        if self.step_count == const.MAX_ITERATIONS :
+            self.step_count = 0
+            self.episode_count += 1
+            self.soccer_bot_one.reset()
+            self.soccer_bot_two.reset()
+            self.soccer_ball.reset()
+            self.display_score()
+            pygame.time.delay(const.DISPLAY_TIME_DELAY)
+            return True, 0, 0, self.player_one_score, self.player_two_score
+        
+        # check bot going out
+        if self.check_bot_out(self.soccer_bot_one):
+            self.soccer_bot_one.reset()
+            return False, -const.GOAL_REWARD, 0, 0, 0
+        if self.check_bot_out(self.soccer_bot_two):
+            self.soccer_bot_two.reset()
+            return False, 0, -const.GOAL_REWARD, 0, 0
+
         if self.check_goal_top():
             self.player_one_score += 1
             self.episode_count += 1
+            self.soccer_bot_one.reset()
+            self.soccer_bot_two.reset()
+            self.soccer_ball.reset()
             self.display_score()
-            pygame.time.delay(1000)
-            return True, const.GOAL_REWARD, -const.GOAL_REWARD
+            pygame.time.delay(const.DISPLAY_TIME_DELAY)
+            return True, const.GOAL_REWARD, -const.GOAL_REWARD, self.player_one_score, self.player_two_score
         elif self.check_goal_bottom():
             self.player_two_score += 1
             self.episode_count += 1
+            self.soccer_bot_one.reset()
+            self.soccer_bot_two.reset()
+            self.soccer_ball.reset()
             self.display_score()
-            pygame.time.delay(1000)
-            return True, -const.GOAL_REWARD, const.GOAL_REWARD
+            pygame.time.delay(const.DISPLAY_TIME_DELAY)
+            return True, -const.GOAL_REWARD, const.GOAL_REWARD, self.player_one_score, self.player_two_score
 
         
         #update the space
@@ -283,7 +313,7 @@ class Game_env:
         self.space.debug_draw(self.draw_options)
         
         pygame.display.flip()
-        return False, 0, 0
+        return False, 0, 0, self.player_one_score, self.player_two_score
         
 
     # def create_ball(self, initial_pos:tuple, radius:int, color:tuple) -> None:
