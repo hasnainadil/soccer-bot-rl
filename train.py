@@ -15,7 +15,7 @@ def train():
     while True:
         #render ui
         agent.env.render()
-        
+
         state_old_one, state_old_two = agent.get_state()
         # get move
         final_move_one,toward_one, rotation_one = agent.get_action_one(state_old_one)
@@ -61,3 +61,7 @@ def train():
             plot_mean_scores_one.append(mean_score_one)
             plot_mean_scores_two.append(mean_score_two)
             ploter.plot(plot_scores_one, plot_mean_scores_one, plot_scores_two, plot_mean_scores_two)
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(train())

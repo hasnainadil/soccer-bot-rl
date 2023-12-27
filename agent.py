@@ -20,11 +20,6 @@ class Agent:
         self.screen = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
         self.env = Game_env(screen=self.screen, fps=60) #create game environment
 
-        #create ball and bots
-        self.env.create_ball((self.screen.get_width()//2, self.screen.get_height()//2), const.BALL_RADIUS,const.BALL_COLOR)
-        self.env.create_bot_one((self.screen.get_width()//2, self.screen.get_height()//2 + const.FIELD_HEIGHT//2 - const.BOT_LINE_DIS - const.BOT_HEIGHT//2),const.BOT_COLOR_ONE, 0)
-        self.env.create_bot_two((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2 + const.BOT_LINE_DIS + const.BOT_HEIGHT//2),const.BOT_COLOR_TWO, math.pi)
-
         self.env.soccer_bot_one.model = Linear_QNet(input_size, hidden_size, output_size)
         self.env.soccer_bot_one.trainer = QTrainer(self.env.soccer_bot_one.model, lr=LR, gamma=self.gamma)
         self.env.soccer_bot_two.model = Linear_QNet(input_size, hidden_size, output_size)
@@ -79,7 +74,8 @@ class Agent:
             final_move[rotation] = 1
         else:
             state0 = torch.tensor(state, dtype=torch.float)
-            prediction = self.env.soccer_bot_one.model(state0).numpy()
+            prediction = self.env.soccer_bot_one.model(state0)
+            prediction = prediction.detach().numpy()
             towards, rotation = np.split(prediction, 2)
             towards = np.argmax(towards)
             rotation = np.argmax(rotation) + 3
@@ -102,7 +98,8 @@ class Agent:
             final_move[rotation] = 1
         else:
             state0 = torch.tensor(state, dtype=torch.float)
-            prediction = self.env.soccer_bot_two.model(state0).numpy()
+            prediction = self.env.soccer_bot_two.model(state0)
+            prediction = prediction.detach().numpy()
             towards, rotation = np.split(prediction, 2)
             towards = np.argmax(towards)
             rotation = np.argmax(rotation) + 3

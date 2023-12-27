@@ -100,6 +100,11 @@ class Game_env:
         wall_top_right = Wall((0,0), (screen.get_width()//2 + const.FIELD_WIDTH//2 , screen.get_height()//2 - const.FIELD_HEIGHT//2), (screen.get_width()//2 + const.GOAL_POST_WIDTH//2 , screen.get_height()//2 - const.FIELD_HEIGHT//2), 2)
         self.space.add(wall_top_right.body, wall_top_right.shape)
 
+        wall_behind_top_post = Wall((0,0),(0,0),(screen.get_width(),0),2)
+        self.space.add(wall_behind_top_post.body, wall_behind_top_post.shape)
+        wall_behind_bottom_post = Wall((0,0),(0,screen.get_height()),(screen.get_width(),screen.get_height()),2)
+        self.space.add(wall_behind_bottom_post.body, wall_behind_bottom_post.shape)
+
 
     def reset(self):
         if self.soccer_ball is not None:
@@ -141,8 +146,8 @@ class Game_env:
         distance_bot_one = math.sqrt((self.soccer_ball.body.position.x - bot.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - bot.shape.body.position.y)**2)
         distance_bot_two = math.sqrt((self.soccer_ball.body.position.x - opponent.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - opponent.shape.body.position.y)**2)
         # rewards are based on position on the field(vertical zone and side zone) and distance from ball to bot
-        reward_one += const.BASE_REWARD*10 * (1/distance_bot_one - 1/distance_bot_two)
-        reward_two += const.BASE_REWARD*10 * (1/distance_bot_two - 1/distance_bot_one)
+        reward_one -= distance_bot_one/10
+        reward_two -= distance_bot_two/10
         reward_one += side_zone_id * const.BASE_REWARD
         reward_two += side_zone_id * const.BASE_REWARD
         reward_one += vertical_zone_id * const.BASE_REWARD
@@ -160,15 +165,32 @@ class Game_env:
     def play_step(self, action_one:tuple=None, action_two:tuple=None):
         if self.check_goal_top():
             self.player_one_score += 1
+            self.soccer_bot_one.reset()
+            self.soccer_bot_two.reset()
+            self.soccer_ball.reset()
+            self.display_score()
+            pygame.time.delay(1000)
             return const.GOAL_REWARD, -const.GOAL_REWARD, True, self.player_one_score, self.player_two_score
         elif self.check_goal_bottom():
             self.player_two_score += 1
+            self.soccer_bot_one.reset()
+            self.soccer_bot_two.reset()
+            self.soccer_ball.reset()
+            self.display_score()
+            pygame.time.delay(1000)
             return -const.GOAL_REWARD, const.GOAL_REWARD, True, self.player_one_score, self.player_two_score
         #logic bots movement and state change
         towards,rotation = action_one
         self.soccer_bot_one.move_direction(towards)
         self.soccer_bot_one.move_direction(rotation)
+        towards,rotation = action_two
+        self.soccer_bot_two.move_direction(towards)
+        self.soccer_bot_two.move_direction(rotation)
         reward_one,reward_two = self.get_reward(self.soccer_bot_one, self.soccer_bot_two)
+        print("Bot one action: ",action_one)
+        print("Bot one reward: ", reward_one)
+        print("Bot two action: ",action_two)
+        print("Bot two reward: ", reward_two)
         return reward_one, reward_two, False, self.player_one_score, self.player_two_score
 
     # get state of both the bots
@@ -183,9 +205,9 @@ class Game_env:
 
             self.own_goal_relative_pos_one = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 + const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
 
-            self.opponent_relative_pos_one = get_direction(true_pos(self.soccer_bot_two.body.position), true_pos(self.soccer_bot_one.body.position),self.soccer_bot_one.shape.body.angle)
+            self.opponent_relative_pos_one = get_direction(true_pos(self.soccer_bot_two.body.position,self.screen.get_height()), true_pos(self.soccer_bot_one.body.position, self.screen.get_height()),self.soccer_bot_one.shape.body.angle)
 
-            self.bot_one_state = np.concatenate(self.ball_relative_pos_one, self.target_post_relative_pos_one, self.own_goal_relative_pos_one, self.opponent_relative_pos_one)
+            self.bot_one_state = np.concatenate((self.ball_relative_pos_one, self.target_post_relative_pos_one, self.own_goal_relative_pos_one, self.opponent_relative_pos_one))
 
         # ball and two post position relative to bot two
         if self.soccer_bot_two is not None :
@@ -195,10 +217,10 @@ class Game_env:
 
             self.own_goal_relative_pos_two = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
 
-            self.opponent_relative_pos_two = get_direction(true_pos(self.soccer_bot_one.body.position), true_pos(self.soccer_bot_two.body.position),self.soccer_bot_two.shape.body.angle)
+            self.opponent_relative_pos_two = get_direction(true_pos(self.soccer_bot_one.body.position, self.screen.get_height()), true_pos(self.soccer_bot_two.body.position, self.screen.get_height()),self.soccer_bot_two.shape.body.angle)
 
             
-            self.bot_two_state = np.concatenate(self.ball_relative_pos_two, self.target_post_relative_pos_two, self.own_goal_relative_pos_two, self.opponent_relative_pos_two)
+            self.bot_two_state = np.concatenate((self.ball_relative_pos_two, self.target_post_relative_pos_two, self.own_goal_relative_pos_two, self.opponent_relative_pos_two))
 
 
         # return state
@@ -261,19 +283,6 @@ class Game_env:
         self.space.step(1/self.FPS)
         self.clock.tick(self.FPS)
         self.space.debug_draw(self.draw_options)
-
-        if self.check_goal_top():
-            self.soccer_bot_one.reset()
-            self.soccer_bot_two.reset()
-            self.soccer_ball.reset()
-            self.display_score()
-            pygame.time.delay(1000)
-        elif self.check_goal_bottom():
-            self.soccer_bot_one.reset()
-            self.soccer_bot_two.reset()
-            self.soccer_ball.reset()
-            self.display_score()
-            pygame.time.delay(1000)
         
         pygame.display.flip()
         
