@@ -7,32 +7,54 @@ screen = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
 
 env = Game_env(screen=screen, fps=60)
 while True:
-    env.render()
-    # for event in pygame.event.get():
-    #     if event.type == pygame.QUIT:
-    #         pygame.quit()
-    #         exit()
-    keys = pygame.key.get_pressed()
-    # soccer_bot.move(keys)
-    if keys[pygame.K_DOWN]:
-        # Accelerate forward
-        env.soccer_bot_one.move_direction(const.Direction.BACKWARD)
-    elif keys[pygame.K_UP]:
-        print("up")
-        # Accelerate backward
-        env.soccer_bot_one.move_direction(const.Direction.FORWARD)
-    else:
-        # Decelerate towards 0 speed
-        env.soccer_bot_one.move_direction(const.Direction.STOP_TOWARDS)
-    if keys[pygame.K_RIGHT]:
-        # Accelerate left (rotate left)
-        env.soccer_bot_one.move_direction(const.Direction.RIGHT)
-    elif keys[pygame.K_LEFT]:
-        # Accelerate right (rotate right)
-        env.soccer_bot_one.move_direction(const.Direction.LEFT)
-    else:
-        # Decelerate rotation towards 0 rotation speed
-        env.soccer_bot_one.move_direction(const.Direction.STOP_ROTATION)
+    done, ending_reward_one, ending_reward_two = env.render()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+        if event.type == pygame.KEYDOWN:
+
+            keys = pygame.key.get_pressed()
+            # soccer_bot.move(keys)
+            if keys[pygame.K_DOWN]:
+                # Accelerate forward
+                env.play_step((const.Direction.BACKWARD, const.Direction.STOP_ROTATION),(const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION))
+            elif keys[pygame.K_UP]:
+                # Accelerate backward
+                env.play_step((const.Direction.FORWARD, const.Direction.STOP_ROTATION),(const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION))
+            else:
+                # Decelerate towards 0 speed
+                env.soccer_bot_one.move_direction(const.Direction.STOP_TOWARDS)
+            if keys[pygame.K_RIGHT]:
+                # Accelerate left (rotate left)
+                env.play_step((const.Direction.STOP_TOWARDS, const.Direction.RIGHT),(const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION))
+            elif keys[pygame.K_LEFT]:
+                # Accelerate right (rotate right)
+                env.play_step((const.Direction.STOP_TOWARDS, const.Direction.LEFT),(const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION))
+            else:
+                # Decelerate rotation towards 0 rotation speed
+                env.soccer_bot_one.move_direction(const.Direction.STOP_ROTATION)
+
+            if keys[pygame.K_w]:
+                # Accelerate forward
+                env.play_step((const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION),(const.Direction.FORWARD, const.Direction.STOP_ROTATION))
+            elif keys[pygame.K_s]:
+                env.play_step((const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION),(const.Direction.BACKWARD, const.Direction.STOP_ROTATION))
+            else:
+                # Decelerate towards 0 speed
+                env.soccer_bot_two.move_direction(const.Direction.STOP_TOWARDS)
+            if keys[pygame.K_d]:
+                env.play_step((const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION),(const.Direction.STOP_TOWARDS, const.Direction.RIGHT))
+            elif keys[pygame.K_a]:
+                env.play_step((const.Direction.STOP_TOWARDS, const.Direction.STOP_ROTATION),(const.Direction.STOP_TOWARDS, const.Direction.LEFT))
+            else:
+                # Decelerate rotation towards 0 rotation speed
+                env.soccer_bot_two.move_direction(const.Direction.STOP_ROTATION)
+
+    if done:
+        env.reset()
+        print("Ending reward one:", ending_reward_one, "Ending reward two:", ending_reward_two)
+
         # if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
         #     env.print_state()
         # if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
