@@ -22,7 +22,6 @@ def display_score(screen:pygame.Surface, player_one_score:int, player_two_score:
 
 def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.pygame_util.DrawOptions, FPS:int) -> None:
     # setting socres and playing flag
-    playing = False
     player_one_score = 0
     player_two_score = 0
 
@@ -31,7 +30,7 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
     # create soccer ball 
     ball_initial_pos = (screen.get_width()//2, screen.get_height()//2)
     ball_radius = const.BALL_RADIUS
-    soccer_ball = Ball(ball_initial_pos, ball_radius, static_body)
+    soccer_ball = Ball(ball_initial_pos, ball_radius)
     soccer_ball.shape.color = const.BALL_COLOR
     pivot = pymunk.PivotJoint(static_body, soccer_ball.shape.body, (0, 0), (0, 0))
     pivot.max_bias = 0 # disable joint correction
@@ -41,7 +40,7 @@ def run_sim(space: pymunk.Space, screen: pygame.Surface, draw_options: pymunk.py
     # create the bot one
     bot_initial_pos = (screen.get_width()//2, screen.get_height()//2 + const.FIELD_HEIGHT//2 - const.BOT_LINE_DIS - const.BOT_HEIGHT//2)
     ps = [(const.BOT_WIDTH//2, const.BOT_HEIGHT//2), (-const.BOT_WIDTH//2, const.BOT_HEIGHT//2), (-const.BOT_WIDTH//2, -const.BOT_HEIGHT//2), (const.BOT_WIDTH//2, -const.BOT_HEIGHT//2)]
-    soccer_bot = BOT(bot_initial_pos, ps, space)    
+    soccer_bot = BOT(bot_initial_pos, ps, 0)    
     soccer_bot.shape.color = const.BOT_COLOR_ONE
     pivot = pymunk.PivotJoint(static_body, soccer_bot.shape.body, (0, 0), (0, 0))
     pivot.max_bias = 0 # disable joint correction

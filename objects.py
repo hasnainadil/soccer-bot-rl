@@ -4,7 +4,7 @@ import pygame
 import math
 
 class Ball():
-    def __init__(self, inial_pos:tuple, radius:int, static_body:pymunk.space) -> None:
+    def __init__(self, inial_pos:tuple, radius:int) -> None:
         self.positon = inial_pos
         self.initial_angle = 0
         self.radius = radius
@@ -22,12 +22,13 @@ class Ball():
 
 
 class BOT():
-    def __init__(self, inial_pos:tuple, vertices:list,static_body) -> None:
+    def __init__(self, inial_pos:tuple, vertices:list, initial_angle=0) -> None:
         self.initial_pos = inial_pos
-        self.initial_angle = 0
+        self.initial_angle = initial_angle
         self.vertices = vertices
         self.body = pymunk.Body(body_type=pymunk.Body.DYNAMIC)
         self.body.position = inial_pos
+        self.body.angle = initial_angle
         self.shape = pymunk.Poly(self.body, self.vertices)
         self.shape.mass = 5
         self.shape.elasticity = 1
@@ -79,6 +80,7 @@ class BOT():
         forward_vector = pymunk.Vec2d(0, self.speed).rotated(self.body.angle)
         self.body.velocity = (self.body.velocity + forward_vector) / 2  # Simple averaging for smoothing
         self.body.angular_velocity = self.rotation_speed
+
     def move_direction(self, direction:const.Direction):
         max_speed = 500
         max_rotation_speed = math.pi
