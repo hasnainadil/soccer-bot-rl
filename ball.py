@@ -16,7 +16,7 @@ class Ball():
         self.shape.elasticity = 0.90
 
     def reset(self):
-        self.body.position = (self.positon[0]+random.randint(-100, 100), self.positon[1])
+        self.body.position = (self.positon[0]+random.randint(-200, 200), self.positon[1])
         self.body.angle = self.initial_angle
         self.body.velocity = (0, 0)
         self.body.angular_velocity = 0

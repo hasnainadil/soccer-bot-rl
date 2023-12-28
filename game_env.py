@@ -112,8 +112,13 @@ class Game_env:
         self.soccer_bot_one.reset()
         self.soccer_bot_two.reset()
         self.soccer_ball.reset()
+        pygame.time.delay(const.DISPLAY_TIME_DELAY)
 
-    def get_reward(self, bot:BOT, opponent:BOT) -> int:
+    def score_reset(self):
+        self.player_two_score = 0
+        self.player_one_score = 0
+
+    def get_reward(self) -> int:
         # get side zone id
         side_zone_id = 1
         reward_one = 0
@@ -139,15 +144,14 @@ class Game_env:
         else:
             vertical_zone_id = 0
         
-        if vertical_zone_id == 0 and side_zone_id == 0:
-            reward_two += 100
-        elif vertical_zone_id == 0 and side_zone_id == 6:
-            reward_one += 100
-
+        if vertical_zone_id == 1 and side_zone_id == 0:
+            reward_two += 300
+        elif vertical_zone_id == 1 and side_zone_id == 6:
+            reward_one += 300
 
         # get distance from ball to bot
-        distance_bot_one = math.sqrt((self.soccer_ball.body.position.x - bot.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - bot.shape.body.position.y)**2)
-        distance_bot_two = math.sqrt((self.soccer_ball.body.position.x - opponent.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - opponent.shape.body.position.y)**2)
+        distance_bot_one = math.sqrt((self.soccer_ball.body.position.x - self.soccer_bot_one.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - self.soccer_bot_one.shape.body.position.y)**2)
+        distance_bot_two = math.sqrt((self.soccer_ball.body.position.x - self.soccer_bot_two.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - self.soccer_bot_two.shape.body.position.y)**2)
         # rewards are based on position on the field(vertical zone and side zone) and distance from ball to bot
         reward_one -= distance_bot_one/2
         reward_two -= distance_bot_two/2
@@ -158,11 +162,6 @@ class Game_env:
 
         return reward_one, reward_two
 
-        
-    def score_reset(self):
-        self.player_two_score = 0
-        self.player_one_score = 0
-
     def play_step(self, action_one:tuple=None, action_two:tuple=None):
         self.step_count += 1
         #logic bots movement and state change
@@ -172,47 +171,51 @@ class Game_env:
         towards,rotation = action_two
         self.soccer_bot_two.move_direction(towards)
         self.soccer_bot_two.move_direction(rotation)
-        reward_one,reward_two = self.get_reward(self.soccer_bot_one, self.soccer_bot_two)
-        # print("Bot one action: ",action_one)
-        # print("Bot one reward: ", reward_one)
-        # print("Bot two action: ",action_two)
-        # print("Bot two reward: ", reward_two)
-        # print("<<------------------>>")
-        # print()
-        return reward_one, reward_two, False, self.player_one_score, self.player_two_score
+        reward_one,reward_two = self.get_reward()
+        # print("Action one:",action_one,"Action two:",action_two)
+        # print("Reward one:", reward_one, "Reward two:", reward_two)
+        # print("<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>")
+        return reward_one, reward_two, self.player_one_score, self.player_two_score
 
     # get state of both the bots
     def get_state(self):
         # ball and two post position relative to bot one
-        if((self.soccer_bot_one == None and self.soccer_bot_two == None) or self.soccer_ball == None):
-            return None
-        if self.soccer_bot_one is not None :
-            self.ball_relative_pos_one = get_direction(true_pos(self.soccer_ball.shape.body.position, self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
+        
+        self.ball_relative_pos_one = get_direction(true_pos(self.soccer_ball.shape.body.position, self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
 
-            self.target_post_relative_pos_one = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
+        self.target_post_relative_pos_one = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
 
-            self.own_goal_relative_pos_one = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 + const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
+        self.own_goal_relative_pos_one = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 + const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
 
-            self.opponent_relative_pos_one = get_direction(true_pos(self.soccer_bot_two.body.position,self.screen.get_height()), true_pos(self.soccer_bot_one.body.position, self.screen.get_height()),self.soccer_bot_one.shape.body.angle)
+        self.opponent_relative_pos_one = get_direction(true_pos(self.soccer_bot_two.body.position,self.screen.get_height()), true_pos(self.soccer_bot_one.body.position, self.screen.get_height()),self.soccer_bot_one.shape.body.angle)
 
-            self.bot_one_state = np.concatenate((self.ball_relative_pos_one, self.target_post_relative_pos_one, self.own_goal_relative_pos_one, self.opponent_relative_pos_one))
+        self.bot_one_state = np.concatenate((self.ball_relative_pos_one, self.target_post_relative_pos_one, self.own_goal_relative_pos_one, self.opponent_relative_pos_one))
 
         # ball and two post position relative to bot two
-        if self.soccer_bot_two is not None :
-            self.ball_relative_pos_two = get_direction(true_pos(self.soccer_ball.shape.body.position, self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
+        self.ball_relative_pos_two = get_direction(true_pos(self.soccer_ball.shape.body.position, self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
 
-            self.target_post_relative_pos_two = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 + const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
+        self.target_post_relative_pos_two = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 + const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
 
-            self.own_goal_relative_pos_two = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
+        self.own_goal_relative_pos_two = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_two.shape.body.position, self.screen.get_height()), self.soccer_bot_two.shape.body.angle)
 
-            self.opponent_relative_pos_two = get_direction(true_pos(self.soccer_bot_one.body.position, self.screen.get_height()), true_pos(self.soccer_bot_two.body.position, self.screen.get_height()),self.soccer_bot_two.shape.body.angle)
-
+        self.opponent_relative_pos_two = get_direction(true_pos(self.soccer_bot_one.body.position, self.screen.get_height()), true_pos(self.soccer_bot_two.body.position, self.screen.get_height()),self.soccer_bot_two.shape.body.angle)
             
-            self.bot_two_state = np.concatenate((self.ball_relative_pos_two, self.target_post_relative_pos_two, self.own_goal_relative_pos_two, self.opponent_relative_pos_two))
-
+        self.bot_two_state = np.concatenate((self.ball_relative_pos_two, self.target_post_relative_pos_two, self.own_goal_relative_pos_two, self.opponent_relative_pos_two))
 
         # return state
         return self.bot_one_state, self.bot_two_state
+
+    def print_state(self):
+        self.get_state()
+        print("Position array format: [left, right, up, down]")
+        print("Ball Relative Position to bot one:", self.ball_relative_pos_one)
+        print("Target Post Relative Position to bot one:", self.target_post_relative_pos_one)
+        print("Own Goal Relative Position to bot one:", self.own_goal_relative_pos_one)
+        print("Bot State one:", self.bot_one_state)
+        print("Ball Relative Position to bot two:", self.ball_relative_pos_two)
+        print("Target Post Relative Position to bot two:", self.target_post_relative_pos_two)
+        print("Own Goal Relative Position to bot two:", self.own_goal_relative_pos_two)
+        print("Bot State two:", self.bot_two_state)
 
     def check_goal_top(self) -> bool:
         return self.soccer_ball.shape.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 and self.soccer_ball.shape.body.position.x > self.screen.get_width()//2 - const.GOAL_POST_WIDTH//2 and self.soccer_ball.shape.body.position.x < self.screen.get_width()//2 + const.GOAL_POST_WIDTH//2
@@ -227,17 +230,6 @@ class Game_env:
         self.screen.blit(score_text, (self.screen.get_width() // 2 - score_text.get_width() // 2, self.screen.get_height() // 2 - score_text.get_height() // 2))
         pygame.display.flip()
 
-    def print_state(self):
-        self.get_state()
-        print("Position array format: [left, right, up, down]")
-        print("Ball Relative Position to bot one:", self.ball_relative_pos_one)
-        print("Target Post Relative Position to bot one:", self.target_post_relative_pos_one)
-        print("Own Goal Relative Position to bot one:", self.own_goal_relative_pos_one)
-        print("Bot State one:", self.bot_one_state)
-        print("Ball Relative Position to bot two:", self.ball_relative_pos_two)
-        print("Target Post Relative Position to bot two:", self.target_post_relative_pos_two)
-        print("Own Goal Relative Position to bot two:", self.own_goal_relative_pos_two)
-        print("Bot State two:", self.bot_two_state)
 
     def check_bot_out(self, bot:BOT) -> bool:
         return bot.shape.body.position.x < self.screen.get_width()//2 - const.FIELD_WIDTH//2 or bot.shape.body.position.x > self.screen.get_width()//2 + const.FIELD_WIDTH//2 or bot.shape.body.position.y < self.screen.get_height()//2 - const.FIELD_HEIGHT//2 or bot.shape.body.position.y > self.screen.get_height()//2 + const.FIELD_HEIGHT//2
@@ -272,39 +264,40 @@ class Game_env:
         if self.step_count == const.MAX_ITERATIONS :
             self.step_count = 0
             self.episode_count += 1
-            self.soccer_bot_one.reset()
-            self.soccer_bot_two.reset()
-            self.soccer_ball.reset()
+            # self.soccer_bot_one.reset()
+            # self.soccer_bot_two.reset()
+            # self.soccer_ball.reset()
             self.display_score()
             pygame.time.delay(const.DISPLAY_TIME_DELAY)
+            print("Max iterations reached")
             return True, 0, 0, self.player_one_score, self.player_two_score
         
         # check bot going out
         if self.check_bot_out(self.soccer_bot_one):
             self.soccer_bot_one.reset()
-            return False, -const.GOAL_REWARD, 0, 0, 0
+            return False, (-1)*const.GOAL_REWARD, 0, 0, 0
         if self.check_bot_out(self.soccer_bot_two):
             self.soccer_bot_two.reset()
-            return False, 0, -const.GOAL_REWARD, 0, 0
+            return False, 0, (-1)*const.GOAL_REWARD, 0, 0
 
         if self.check_goal_top():
             self.player_one_score += 1
             self.episode_count += 1
-            self.soccer_bot_one.reset()
-            self.soccer_bot_two.reset()
-            self.soccer_ball.reset()
+            # self.soccer_bot_one.reset()
+            # self.soccer_bot_two.reset()
+            # self.soccer_ball.reset()
             self.display_score()
             pygame.time.delay(const.DISPLAY_TIME_DELAY)
-            return True, const.GOAL_REWARD, -const.GOAL_REWARD, self.player_one_score, self.player_two_score
+            return True, const.GOAL_REWARD, (-1)*const.GOAL_REWARD, self.player_one_score, self.player_two_score
         elif self.check_goal_bottom():
             self.player_two_score += 1
             self.episode_count += 1
-            self.soccer_bot_one.reset()
-            self.soccer_bot_two.reset()
-            self.soccer_ball.reset()
+            # self.soccer_bot_one.reset()
+            # self.soccer_bot_two.reset()
+            # self.soccer_ball.reset()
             self.display_score()
             pygame.time.delay(const.DISPLAY_TIME_DELAY)
-            return True, -const.GOAL_REWARD, const.GOAL_REWARD, self.player_one_score, self.player_two_score
+            return True, (-1)*const.GOAL_REWARD, const.GOAL_REWARD, self.player_one_score, self.player_two_score
 
         
         #update the space
@@ -315,29 +308,3 @@ class Game_env:
         pygame.display.flip()
         return False, 0, 0, self.player_one_score, self.player_two_score
         
-
-    # def create_ball(self, initial_pos:tuple, radius:int, color:tuple) -> None:
-    #     self.soccer_ball = Ball(initial_pos, radius)
-    #     self.soccer_ball.shape.color = color
-    #     pivot = pymunk.PivotJoint(self.static_body, self.soccer_ball.shape.body, (0, 0), (0, 0))
-    #     pivot.max_bias = 0 # disable joint correction
-    #     pivot.max_force = const.BALL_FRICTION_FORCE # emulate linear friction 
-    #     self.space.add(self.soccer_ball.body, self.soccer_ball.shape, pivot)
-
-    # def create_bot_one(self,initial_pos:tuple, color:tuple, initial_angle=0):
-    #     vertices = [(const.BOT_WIDTH//2, const.BOT_HEIGHT//2), (-const.BOT_WIDTH//2, const.BOT_HEIGHT//2), (-const.BOT_WIDTH//2, -const.BOT_HEIGHT//2), (const.BOT_WIDTH//2, -const.BOT_HEIGHT//2)] 
-    #     self.soccer_bot_one = BOT(initial_pos, vertices, initial_angle)
-    #     self.soccer_bot_one.shape.color = color
-    #     pivot = pymunk.PivotJoint(self.static_body, self.soccer_bot_one.shape.body, (0, 0), (0, 0))
-    #     pivot.max_bias = 0
-    #     pivot.max_force = const.BOT_FRICTION_FORCE
-    #     self.space.add(self.soccer_bot_one.body, self.soccer_bot_one.shape, pivot)
-    
-    # def create_bot_two(self,initial_pos:tuple, color:tuple, initial_angle=math.pi):
-    #     vertices = [(const.BOT_WIDTH//2, const.BOT_HEIGHT//2), (-const.BOT_WIDTH//2, const.BOT_HEIGHT//2), (-const.BOT_WIDTH//2, -const.BOT_HEIGHT//2), (const.BOT_WIDTH//2, -const.BOT_HEIGHT//2)] 
-    #     self.soccer_bot_two = BOT(initial_pos, vertices, initial_angle)
-    #     self.soccer_bot_two.shape.color = color
-    #     pivot = pymunk.PivotJoint(self.static_body, self.soccer_bot_two.shape.body, (0, 0), (0, 0))
-    #     pivot.max_bias = 0
-    #     pivot.max_force = const.BOT_FRICTION_FORCE
-    #     self.space.add(self.soccer_bot_two.body, self.soccer_bot_two.shape, pivot)

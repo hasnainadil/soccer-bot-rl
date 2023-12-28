@@ -7,7 +7,7 @@ screen = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
 
 env = Game_env(screen=screen, fps=60)
 while True:
-    done, ending_reward_one, ending_reward_two = env.render()
+    done, ending_reward_one, ending_reward_two, score_one, score_two = env.render()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
