@@ -9,6 +9,10 @@ def train():
     plot_scores_two = []
     plot_mean_scores_two = []
     total_score_one = 0
+    reward_one = 0
+    reward_two = 0
+    reward_list_one = []
+    reward_list_two = []
     cumulative_reward_one = 0
     cumulative_reward_two = 0
     total_score_two = 0
@@ -61,17 +65,21 @@ def train():
 
             print("Cumulative Reward One: ", cumulative_reward_one)
             print("Cumulative Reward Two: ", cumulative_reward_two)
+            # print("Reward One: ", reward_one)
+            # print("Reward Two: ", reward_two)
             print('Game', agent.env.episode_count, 'Player One Score', player_one_score, 'Player Two Score', player_two_score, 'Record:', record_one,"--", record_two)
 
             plot_scores_one.append(player_one_score)
             plot_scores_two.append(player_two_score)
+            reward_list_one.append(reward_one/10)
+            reward_list_two.append(reward_two/10)
             total_score_one += player_one_score
             total_score_two += player_two_score
             mean_score_one = total_score_one / agent.env.episode_count
             mean_score_two = total_score_two / agent.env.episode_count
             plot_mean_scores_one.append(mean_score_one)
             plot_mean_scores_two.append(mean_score_two)
-            plot(plot_scores_one, plot_scores_two, plot_mean_scores_one, plot_mean_scores_two,agent.env.episode_count)
+            plot(plot_scores_one, plot_scores_two, plot_mean_scores_one, plot_mean_scores_two,agent.env.episode_count, reward_list_one, reward_list_two)
 
 if __name__ == '__main__':
     import sys

@@ -3,7 +3,7 @@ from IPython import display
 
 plt.ion()
 
-def plot(scores_one, scores_two, mean_scores_one, mean_scores_two, games):
+def plot(scores_one, scores_two, mean_scores_one, mean_scores_two, games, reward_one, reward_two):
     display.clear_output(wait=True)
     plt.clf()
     plt.text(.01, .99, "Game: "+str(games), ha='left', va='top', transform=plt.gca().transAxes)
@@ -15,6 +15,8 @@ def plot(scores_one, scores_two, mean_scores_one, mean_scores_two, games):
     plt.plot(mean_scores_one, label="Mean_one")
     plt.plot(scores_two, label="Score_two")
     plt.plot(mean_scores_two, label="Mean_two")
+    plt.plot(reward_one, label="Last step reward bot one")
+    plt.plot(reward_two, label="Last step reward bot two")
     plt.ylim(ymin=0)
     plt.text(len(scores_one) - 1, scores_one[-1], str(scores_one[-1]))
     plt.text(len(scores_two) - 1, scores_two[-1], str(scores_two[-1]))

@@ -73,13 +73,13 @@ class Agent:
         explore = np.random.choice([True, False], p=[self.epsilon_one, 1-self.epsilon_one])
         final_move = np.zeros(6)
         if explore:
-            print("random")
+            # print("random")
             towards = np.random.choice([0, 1, 2],p=[0.4, 0.35, 0.25])
             final_move[towards] = 1
             rotation = random.randint(3, 5)
             final_move[rotation] = 1
         else:
-            print("Predicted")
+            # print("Predicted")
             state0 = torch.tensor(state, dtype=torch.float)
             prediction = self.env.soccer_bot_one.model(state0)
             prediction = prediction.detach().numpy()
