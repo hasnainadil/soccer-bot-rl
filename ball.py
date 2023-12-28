@@ -12,7 +12,7 @@ class Ball():
         self.body = pymunk.Body(body_type=pymunk.Body.DYNAMIC)
         self.body.position = self.positon
         self.shape = pymunk.Circle(self.body, self.radius)
-        self.shape.mass = 5
+        self.shape.mass = 2
         self.shape.elasticity = 0.90
 
     def reset(self):

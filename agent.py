@@ -15,7 +15,6 @@ LR = 0.001
 
 class Agent:
     def __init__(self,input_size, hidden_size, output_size):
-        self.n_games = 0
         self.epsilon_one = 1 # randomness
         self.epsilon_two = 1
         self.gamma = 0.9
@@ -23,7 +22,6 @@ class Agent:
         self.env = Game_env(screen=self.screen, fps=60) #create game environment
 
         self.env.soccer_bot_one.model = Linear_QNet(input_size, hidden_size, output_size)
-        # model_path = os.path.join('./model', file_name)
         self.env.soccer_bot_one.trainer = QTrainer(self.env.soccer_bot_one.model, lr=LR, gamma=self.gamma)
         self.env.soccer_bot_two.model = Linear_QNet(input_size, hidden_size, output_size)
         self.env.soccer_bot_two.trainer = QTrainer(self.env.soccer_bot_two.model, lr=LR, gamma=self.gamma)
@@ -68,8 +66,8 @@ class Agent:
         # random moves: tradeoff exploration / exploitation
         towards = None
         rotation = None
-        self.epsilon_one = 1 - self.env.episode_count*0.01
-        self.epsilon_one = max(self.epsilon_one, 0.3)
+        self.epsilon_one = 1 - self.env.episode_count * 0.05
+        self.epsilon_one = max(self.epsilon_one, 0.25)
         explore = np.random.choice([True, False], p=[self.epsilon_one, 1-self.epsilon_one])
         final_move = np.zeros(6)
         if explore:
@@ -95,8 +93,8 @@ class Agent:
         # random moves: tradeoff exploration / exploitation
         towards = None
         rotation = None
-        self.epsilon_two -= self.env.episode_count*0.01
-        self.epsilon_two = max(self.epsilon_two, 0.3)
+        self.epsilon_two = 1 - self.env.episode_count*0.05
+        self.epsilon_two = max(self.epsilon_two, 0.25)
         explore = np.random.choice([True, False], p=[self.epsilon_two, 1-self.epsilon_two])
         final_move = np.zeros(6)
         if explore:

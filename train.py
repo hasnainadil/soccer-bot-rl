@@ -3,7 +3,7 @@ import constants as const
 from ploter import plot
 
 def train():
-    agent = Agent(16, 256, 6)
+    agent = Agent(16, 512, 6)
     plot_scores_one = []
     plot_mean_scores_one = []
     plot_scores_two = []
@@ -13,6 +13,7 @@ def train():
     reward_two = 0
     reward_list_one = []
     reward_list_two = []
+    cumulative_reward_diff = []
     cumulative_reward_one = 0
     cumulative_reward_two = 0
     total_score_two = 0
@@ -22,13 +23,13 @@ def train():
     record_two = 0
     while True:
         #render ui
-        done, ending_reward_one, ending_reward_two,player_one_score,player_two_score = agent.env.render()
+        done, ending_reward_one, ending_reward_two, player_one_score, player_two_score = agent.env.render()
         
         # get old state
         state_old_one, state_old_two = agent.get_state()
         # get move
-        final_move_one,toward_one, rotation_one = agent.get_action_one(state_old_one)
-        final_move_two,toward_two, rotation_two = agent.get_action_two(state_old_two)
+        final_move_one, toward_one, rotation_one = agent.get_action_one(state_old_one)
+        final_move_two, toward_two, rotation_two = agent.get_action_two(state_old_two)
         
         # perform move and get new state
         reward_one, reward_two, player_one_score, player_two_score = agent.env.play_step((const.Direction(toward_one), const.Direction
@@ -50,7 +51,6 @@ def train():
 
         if done:
             agent.env.reset()
-            # time.sleep(1)
 
             # train long memory, plot result
             agent.train_long_memory_one()
@@ -65,10 +65,10 @@ def train():
             agent.env.soccer_bot_one.model.save("bot_one_model.pth")
             agent.env.soccer_bot_two.model.save("bot_two_model.pth")
 
+            cumulative_reward_diff.append(cumulative_reward_one - cumulative_reward_two)
+
             print("Cumulative Reward One: ", cumulative_reward_one)
             print("Cumulative Reward Two: ", cumulative_reward_two)
-            # print("Reward One: ", reward_one)
-            # print("Reward Two: ", reward_two)
             print('Game', agent.env.episode_count, 'Player One Score', player_one_score, 'Player Two Score', player_two_score, 'Record:', record_one,"--", record_two)
 
             plot_scores_one.append(player_one_score)
@@ -85,7 +85,7 @@ def train():
             mean_score_two = total_score_two / agent.env.episode_count
             plot_mean_scores_one.append(mean_score_one)
             plot_mean_scores_two.append(mean_score_two)
-            plot(plot_scores_one, plot_scores_two, plot_mean_scores_one, plot_mean_scores_two,agent.env.episode_count, reward_list_one, reward_list_two,player_one_score,player_two_score)
+            plot(plot_scores_one, plot_scores_two, plot_mean_scores_one, plot_mean_scores_two,agent.env.episode_count, reward_list_one, reward_list_two,player_one_score,player_two_score, cumulative_reward_diff)
 
 if __name__ == '__main__':
     import sys

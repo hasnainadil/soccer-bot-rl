@@ -146,26 +146,37 @@ class Game_env:
         
         if vertical_zone_id == 1 and side_zone_id == 0:
             reward_two += 300
+            reward_one -= 300
         elif vertical_zone_id == 1 and side_zone_id == 6:
             reward_one += 300
+            reward_two -= 300
 
         # get distance from ball to bot
         distance_bot_one = math.sqrt((self.soccer_ball.body.position.x - self.soccer_bot_one.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - self.soccer_bot_one.shape.body.position.y)**2)
         distance_bot_two = math.sqrt((self.soccer_ball.body.position.x - self.soccer_bot_two.shape.body.position.x)**2 + (self.soccer_ball.body.position.y - self.soccer_bot_two.shape.body.position.y)**2)
         # rewards are based on position on the field(vertical zone and side zone) and distance from ball to bot
-        reward_one -= distance_bot_one/2
-        reward_two -= distance_bot_two/2
+        if distance_bot_one > 1:
+            reward_one += 500 / distance_bot_one
+        else:
+            reward_one += 500  # Assign a high reward if the distance is zero
+
+        if distance_bot_one > 1:
+            reward_two += 500 / distance_bot_one
+        else:
+            reward_two += 500  # Assign a high reward if the distance is zero
+
         reward_one += side_zone_id * const.BASE_REWARD
         reward_two += side_zone_id * const.BASE_REWARD
         reward_one += vertical_zone_id * const.BASE_REWARD
         reward_two += (6 - vertical_zone_id) * const.BASE_REWARD # opponent vertical zone id is negative of bot vertical zone id
+        # print("Distance bot one:", distance_bot_one, "Distance bot two:", distance_bot_two)
 
         return reward_one, reward_two
 
     def play_step(self, action_one:tuple=None, action_two:tuple=None):
         self.step_count += 1
         #logic bots movement and state change
-        towards,rotation = action_one
+        towards, rotation = action_one
         self.soccer_bot_one.move_direction(towards)
         self.soccer_bot_one.move_direction(rotation)
         towards,rotation = action_two
@@ -179,8 +190,8 @@ class Game_env:
 
     # get state of both the bots
     def get_state(self):
-        # ball and two post position relative to bot one
-        
+
+        # ball and two post position relative to bot one        
         self.ball_relative_pos_one = get_direction(true_pos(self.soccer_ball.shape.body.position, self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
 
         self.target_post_relative_pos_one = get_direction(true_pos((self.screen.get_width()//2, self.screen.get_height()//2 - const.FIELD_HEIGHT//2), self.screen.get_height()), true_pos(self.soccer_bot_one.shape.body.position, self.screen.get_height()), self.soccer_bot_one.shape.body.angle)
@@ -264,9 +275,6 @@ class Game_env:
         if self.step_count == const.MAX_ITERATIONS :
             self.step_count = 0
             self.episode_count += 1
-            # self.soccer_bot_one.reset()
-            # self.soccer_bot_two.reset()
-            # self.soccer_ball.reset()
             self.display_score()
             pygame.time.delay(const.DISPLAY_TIME_DELAY)
             print("Max iterations reached")
@@ -283,18 +291,12 @@ class Game_env:
         if self.check_goal_top():
             self.player_one_score += 1
             self.episode_count += 1
-            # self.soccer_bot_one.reset()
-            # self.soccer_bot_two.reset()
-            # self.soccer_ball.reset()
             self.display_score()
             pygame.time.delay(const.DISPLAY_TIME_DELAY)
             return True, const.GOAL_REWARD, (-1)*const.GOAL_REWARD, self.player_one_score, self.player_two_score
         elif self.check_goal_bottom():
             self.player_two_score += 1
             self.episode_count += 1
-            # self.soccer_bot_one.reset()
-            # self.soccer_bot_two.reset()
-            # self.soccer_ball.reset()
             self.display_score()
             pygame.time.delay(const.DISPLAY_TIME_DELAY)
             return True, (-1)*const.GOAL_REWARD, const.GOAL_REWARD, self.player_one_score, self.player_two_score

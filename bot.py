@@ -34,36 +34,6 @@ class BOT():
         self.rotation_speed = max(self.rotation_speed - self.rotation_acceleration, -max_rotation_speed)
     def stop_rotation(self):
         self.rotation_speed = 0 if abs(self.rotation_speed) < self.rotation_acceleration else self.rotation_speed - self.rotation_acceleration * (self.rotation_speed / abs(self.rotation_speed))
-    
-        
-    def move(self, keys):
-        max_speed = 500  # Maximum speed (adjust as needed)
-        max_rotation_speed = math.pi  # Maximum rotation speed (adjust as needed)
-
-        if keys[pygame.K_DOWN]:
-            # Accelerate forward
-            self.move_down(max_speed)
-        elif keys[pygame.K_UP]:
-            # Accelerate backward
-            self.move_forward(max_speed)
-        else:
-            # Decelerate towards 0 speed
-            self.stop_towards()
-
-        if keys[pygame.K_RIGHT]:
-            # Accelerate left (rotate left)
-            self.rotate_right(max_rotation_speed)
-        elif keys[pygame.K_LEFT]:
-            # Accelerate right (rotate right)
-            self.rotate_left(max_rotation_speed)
-        else:
-            # Decelerate rotation towards 0 rotation speed
-            self.stop_rotation()
-
-        # Update body's velocity and angular velocity
-        forward_vector = pymunk.Vec2d(0, self.speed).rotated(self.body.angle)
-        self.body.velocity = (self.body.velocity + forward_vector) / 2  # Simple averaging for smoothing
-        self.body.angular_velocity = self.rotation_speed
 
     def move_direction(self, direction:const.Direction):
         max_speed = 500
