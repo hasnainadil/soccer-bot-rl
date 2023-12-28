@@ -16,6 +16,8 @@ def train():
     cumulative_reward_one = 0
     cumulative_reward_two = 0
     total_score_two = 0
+    totat_reward_player_one = 0
+    totat_reward_player_two = 0
     record_one = 0
     record_two = 0
     while True:
@@ -71,15 +73,19 @@ def train():
 
             plot_scores_one.append(player_one_score)
             plot_scores_two.append(player_two_score)
-            reward_list_one.append(reward_one/10)
-            reward_list_two.append(reward_two/10)
+            # reward_list_one.append(reward_one/10)
+            # reward_list_two.append(reward_two/10)
+            totat_reward_player_one += reward_one
+            totat_reward_player_two += reward_two
+            reward_list_one.append(totat_reward_player_one*0.1/agent.env.episode_count)
+            reward_list_two.append(totat_reward_player_two*0.1/agent.env.episode_count)
             total_score_one += player_one_score
             total_score_two += player_two_score
             mean_score_one = total_score_one / agent.env.episode_count
             mean_score_two = total_score_two / agent.env.episode_count
             plot_mean_scores_one.append(mean_score_one)
             plot_mean_scores_two.append(mean_score_two)
-            plot(plot_scores_one, plot_scores_two, plot_mean_scores_one, plot_mean_scores_two,agent.env.episode_count, reward_list_one, reward_list_two)
+            plot(plot_scores_one, plot_scores_two, plot_mean_scores_one, plot_mean_scores_two,agent.env.episode_count, reward_list_one, reward_list_two,player_one_score,player_two_score)
 
 if __name__ == '__main__':
     import sys
