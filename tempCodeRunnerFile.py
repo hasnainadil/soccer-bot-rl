@@ -1,1 +1,0 @@
-epsilons.append(agent.epsilon)
